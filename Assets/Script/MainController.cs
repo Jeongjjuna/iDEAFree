@@ -16,7 +16,7 @@ public class MainController : MonoBehaviour
 
     //서버와의 tcp통신을 위한 준비
     TcpClient client;
-    //string serverIP = "168.131.153.213"; //서버 아이피 입력 :
+    //string serverIP = "168.131.153.213"; //서버 아이피 입력 : //정식배포용(연구실서버용)
     string serverIP = "192.168.56.1"; //지훈집서버 테스트용
     int port = 9999;
     byte[] receivedBuffer;
