@@ -38,7 +38,7 @@ def threaded(client_socket, addr):
 
     
 # 유니티 클라이언트
-def threaded2(client_socket, addr): 
+def communication_with_unity(client_socket, addr): 
     global q
     # 서버ip : 클라이언트 포트
     print('유니티접속 성공!(', addr[0], ':', addr[1],')') 
@@ -100,7 +100,7 @@ while True:
           
     #받은 메세지가 'unity' 라면 유니티 쓰레드함수로 이동
     if data.decode() == 'unity':
-        start_new_thread(threaded2, (client_socket, addr)) #유니티
+        start_new_thread(communication_with_unity, (client_socket, addr)) #유니티
     #받은 메세지가 'unity'가 아니라면 음성인식 쓰레드함수로 이동
     else:
         start_new_thread(threaded, (client_socket, addr)) #젯슨
