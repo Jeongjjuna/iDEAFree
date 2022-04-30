@@ -50,22 +50,22 @@ def threaded2(client_socket, addr):
                 print('유니티 연결 종료 ' + addr[0],':',addr[1])
                 break
                 
-            data2 = q.get() #큐의 맨앞에서 encode()형의 데이터를 가져온다.
-            if data2: #데이터 값이 존재한다면
-                if data2 == b'\x00\x00\x00\x03': #서버에서의 전송받을 시 공백구분데이터 > 이때는 패스
+            data_from_queue = q.get() #큐의 맨앞에서 encode()형의 데이터를 가져온다.
+            if data_from_queue: #데이터 값이 존재한다면
+                if data_from_queue == b'\x00\x00\x00\x03': #서버에서의 전송받을 시 공백구분데이터 > 이때는 패스
                     continue
                 else:
                     #받은 데이터가 hangle 안에 있는 문자열 일 때
-                    if data2.decode() in hangle:# !!!! data.decode() 는data유형을 실제로 변환시키지 않는다.
-                        print('발신',data2.decode(),end='') #전송된 데이터와 유니티로의 전송이 성공했을때를 알려주는 디버깅용 함수
+                    if data_from_queue.decode() in hangle:# !!!! data.decode() 는data유형을 실제로 변환시키지 않는다.
+                        print('발신',data_from_queue.decode(),end='') #전송된 데이터와 유니티로의 전송이 성공했을때를 알려주는 디버깅용 함수
                         print(' >>> 유니티로 전송 발신 성공')
-                        client_socket.send(data2) #실제 유니티로 데이터 전송
+                        client_socket.send(data_from_queue) #실제 유니티로 데이터 전송
                         time.sleep(0.25)
                         
-                    elif data2.decode() == ' ':
-                        print('발신',data2.decode(),end='') #전송된 데이터와 유니티로의 전송이 성공했을때를 알려주는 디버깅용 함수
+                    elif data_from_queue.decode() == ' ':
+                        print('발신',data_from_queue.decode(),end='') #전송된 데이터와 유니티로의 전송이 성공했을때를 알려주는 디버깅용 함수
                         print(' >>> 유니티로 전송 발신 성공')
-                        client_socket.send(data2) #실제 유니티로 데이터 전송
+                        client_socket.send(data_from_queue) #실제 유니티로 데이터 전송
                         time.sleep(0.1)
             
         except ConnectionResetError as e:
