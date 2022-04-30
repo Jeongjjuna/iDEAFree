@@ -45,6 +45,11 @@ def threaded2(client_socket, addr):
 
     while True: 
         try:
+            data = client_socket.recv(1024)
+            if not data: 
+                print('유니티 연결 종료 ' + addr[0],':',addr[1])
+                break
+                
             data2 = q.get() #큐의 맨앞에서 encode()형의 데이터를 가져온다.
             if data2: #데이터 값이 존재한다면
                 if data2 == b'\x00\x00\x00\x03': #서버에서의 전송받을 시 공백구분데이터 > 이때는 패스
