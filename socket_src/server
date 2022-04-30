@@ -91,24 +91,14 @@ while True:
     
     #accept들어올때 까지 대기
     client_socket, addr = server_socket.accept()
-    #연결되면 accept 프린트
-    if k==0:
-        print("젯슨나노 클라이언트 접속중...")
-        time.sleep(3)
+    data = client_socket.recv(1024) #들어오면 곧바로 클라이언트로부터 내가 어떤 클라이언트인지 메세지 받기
+          
+    #받은 메세지가 'unity' 라면 유니티 쓰레드함수로 이동
+    if data.decode() == 'unity':
+        start_new_thread(threaded2, (client_socket, addr)) #유니티
+    #받은 메세지가 'unity'가 아니라면 음성인식 쓰레드함수로 이동
     else:
-        print("유니티 클라이언트 접속중...")
-        time.sleep(3)
-
-    
-    #연결된 클라이언트의 새로운 쓰레드생성
-    if k==0:
-        start_new_thread(threaded, (client_socket, addr)) #>>쓰레드 시작함수
-    else:
-        start_new_thread(threaded2, (client_socket, addr))
-
-    k=k+1
-    if k==2:
-        k=0
+        start_new_thread(threaded, (client_socket, addr)) #젯슨
     
     
 print('server ended')
