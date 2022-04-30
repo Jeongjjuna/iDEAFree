@@ -13,7 +13,7 @@ hangle = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ
           'ㅟ','ㅚ','ㅢ','*']
 
 # 젯슨나노 음성자모음 클라이언트
-def threaded(client_socket, addr): 
+def communication_with_python(client_socket, addr): 
     global q
     # 서버ip : 클라이언트 포트
     print('젯슨나노 접속성공!(', addr[0], ':', addr[1],')') 
@@ -103,7 +103,7 @@ while True:
         start_new_thread(communication_with_unity, (client_socket, addr)) #유니티
     #받은 메세지가 'unity'가 아니라면 음성인식 쓰레드함수로 이동
     else:
-        start_new_thread(threaded, (client_socket, addr)) #젯슨
+        start_new_thread(communication_with_python, (client_socket, addr)) #젯슨
     
     
 print('server ended')
