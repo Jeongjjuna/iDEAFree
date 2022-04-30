@@ -21,6 +21,9 @@ def communication_with_python(client_socket, addr):
     while True: 
         try:
             data = client_socket.recv(1024)
+            if not data: 
+                print('젯슨나노 연결 종료' + addr[0],':',addr[1])
+                break
             q.put(data)
             
             if not data: 
