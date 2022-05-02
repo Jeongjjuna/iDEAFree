@@ -6,7 +6,7 @@ import time
 
 # 젯슨나노 음성자모음 클라이언트
 def communication_with_python(client_socket, addr):
-    global python_to_unity_queue, count_connectied_jetson
+    global python_to_unity_queue, unity_to_python_queue
     # 서버ip : 클라이언트 포트
     print('젯슨나노 접속성공!(', addr[0], ':', addr[1],')') 
 
@@ -17,7 +17,7 @@ def communication_with_python(client_socket, addr):
                 #print('젯슨나노 연결 종료' + addr[0],':',addr[1])
                 break
             print(data.decode().strip())
-            #python_to_unity_queue.put(data)
+            python_to_unity_queue.put(data)
             
         except ConnectionResetError as e:
             #print('Disconnected by 젯슨 예외처리')
@@ -29,7 +29,7 @@ def communication_with_python(client_socket, addr):
 
 # 유니티 클라이언트
 def communication_with_unity(client_socket, addr): 
-    global python_to_unity_queue
+    global python_to_unity_queue, unity_to_python_queue
     # 서버ip : 클라이언트 포트
     print('유니티접속 성공!(', addr[0], ':', addr[1],')') 
 
@@ -40,9 +40,11 @@ def communication_with_unity(client_socket, addr):
                 print('유니티 연결 종료 ' + addr[0],':',addr[1])
                 break
             
-            # if data_from_unity == 'ChangeHanddetectionMode':
-            #     client_socket.sendall('ChangeHanddetectionMode'.encode())
-            # elif data_from_unity == 'ChangListenMode':
+            #유니티에서 파이썬으로 전달하는 데이터받아서 집어넣기
+            if data_from_unity.decode() == 'ChangeHanddetectionMode':
+                unity_to_python_queue.put(data_from_unity)
+            elif data_from_unity.decode() == 'ChangListenMode':
+                unity_to_python_queue.put(data_from_unity)
 
             data_from_queue = python_to_unity_queue.get() #큐의 맨앞에서 encode()형의 데이터를 가져온다.
             if data_from_queue: #데이터 값이 존재한다면
