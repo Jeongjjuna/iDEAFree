@@ -6,7 +6,7 @@ import time
 print("IP Address(Internal) : ",socket.gethostbyname(socket.gethostname()))
 
 
-q = queue.Queue() #전송받은 문자열을 큐 자료구조형태로 입,출력.
+python_to_unity_queue = queue.Queue() #전송받은 문자열을 큐 자료구조형태로 입,출력.
 #제슨(파이썬)으로 전송받을 문자들.
 hangle = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ',
           'ㅏ','ㅑ','ㅓ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ','ㅐ','ㅒ','ㅔ','ㅖ',
@@ -14,7 +14,7 @@ hangle = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ
 
 # 젯슨나노 음성자모음 클라이언트
 def communication_with_python(client_socket, addr): 
-    global q
+    global python_to_unity_queue
     # 서버ip : 클라이언트 포트
     print('젯슨나노 접속성공!(', addr[0], ':', addr[1],')') 
 
@@ -24,7 +24,7 @@ def communication_with_python(client_socket, addr):
             if not data: 
                 print('젯슨나노 연결 종료' + addr[0],':',addr[1])
                 break
-            q.put(data)
+            python_to_unity_queue.put(data)
             
             if not data: 
                 #print('test',data.decode())
@@ -42,7 +42,7 @@ def communication_with_python(client_socket, addr):
     
 # 유니티 클라이언트
 def communication_with_unity(client_socket, addr): 
-    global q
+    global python_to_unity_queue
     # 서버ip : 클라이언트 포트
     print('유니티접속 성공!(', addr[0], ':', addr[1],')') 
 
@@ -53,7 +53,7 @@ def communication_with_unity(client_socket, addr):
                 print('유니티 연결 종료 ' + addr[0],':',addr[1])
                 break
                 
-            data_from_queue = q.get() #큐의 맨앞에서 encode()형의 데이터를 가져온다.
+            data_from_queue = python_to_unity_queue.get() #큐의 맨앞에서 encode()형의 데이터를 가져온다.
             if data_from_queue: #데이터 값이 존재한다면
                 if data_from_queue == b'\x00\x00\x00\x03': #서버에서의 전송받을 시 공백구분데이터 > 이때는 패스
                     continue
