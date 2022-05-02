@@ -1,3 +1,8 @@
+import socket 
+from _thread import *
+#서버, 클라이언트, 쓰레드관련 함수 모음--------------------------------------------------------------------
+
+
 # 젯슨나노 음성자모음 클라이언트
 def communication_with_python(client_socket, addr):
     global python_to_unity_queue, count_connectied_jetson
@@ -19,8 +24,8 @@ def communication_with_python(client_socket, addr):
 
     print('젯슨나노 연결 종료' + addr[0],':',addr[1]) # 예외발생시 젯슨과의 tcp연결 종료를 알리는 디벙깅용함수
     client_socket.close() #젯슨 과의 클라이언트 연결 종료
-    
-    
+
+
 # 유니티 클라이언트
 def communication_with_unity(client_socket, addr): 
     global python_to_unity_queue
@@ -62,3 +67,33 @@ def communication_with_unity(client_socket, addr):
     
     print("유니티 클라이언트 접속 종료")
     client_socket.close() #클라이언트 연결 종료
+
+
+def set_server():
+    #서버 ip,포트
+    #HOST = socket.gethostbyname(socket.gethostname()) #서버 자신의 고정 ip 받아오기
+    HOST = '127.0.0.1'
+    PORT = 9999
+    #서버연결
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind((HOST, PORT)) 
+    server_socket.listen()
+    return server_socket
+
+
+def waiting_client(server_socket):
+    print('클라이언트 접속 대기중...')
+    client_socket, addr = server_socket.accept() #accept들어올때 까지 대기
+    what_client = client_socket.recv(1024) # ex) data = 'unity' or 'jetson'
+
+    return client_socket, addr, what_client
+
+
+def run_thread(client_socket, addr, what_client):
+    #받은 메세지가 'unity' 라면 유니티 쓰레드함수로 이동
+    if what_client.decode() == 'unity':
+        start_new_thread(communication_with_unity, (client_socket, addr)) #유니티
+    #받은 메세지가 'unity'가 아니라면 음성인식 쓰레드함수로 이동
+    else:
+        start_new_thread(communication_with_python, (client_socket, addr)) #젯슨
