@@ -1,8 +1,20 @@
 import socket 
 from _thread import *
 import time
+import queue
 #서버, 클라이언트, 쓰레드관련 함수 모음--------------------------------------------------------------------
 
+#전역변수 선언----------------------------------------------------------------
+
+python_to_unity_queue = queue.Queue() #파이썬으로부터 받은문자들
+unity_to_python_queue = queue.Queue() #유니티로부터 받은문자들
+
+#제슨(파이썬)으로 전송받을 문자리스트
+hangle = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ',
+        'ㅏ','ㅑ','ㅓ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ','ㅐ','ㅒ','ㅔ','ㅖ',
+        'ㅟ','ㅚ','ㅢ','*']
+
+#-----------------------------------------------------------------------------
 
 # 젯슨나노 음성자모음 클라이언트
 def communication_with_python(client_socket, addr):
@@ -10,7 +22,7 @@ def communication_with_python(client_socket, addr):
     # 서버ip : 클라이언트 포트
     print('젯슨나노 접속성공!(', addr[0], ':', addr[1],')') 
 
-    while True: 
+    while True:
         try:
             data = client_socket.recv(1024)
             if not data:
@@ -33,18 +45,18 @@ def communication_with_unity(client_socket, addr):
     # 서버ip : 클라이언트 포트
     print('유니티접속 성공!(', addr[0], ':', addr[1],')') 
 
-    while True: 
+    while True:
         try:
-            data_from_unity = client_socket.recv(1024)
-            if not data_from_unity: 
-                print('유니티 연결 종료 ' + addr[0],':',addr[1])
-                break
+            #data_from_unity = client_socket.recv(1024) #여기서 대기하고 있기때문에 이부분은 또다른 쓰레드로 만들어야 할듯!
+            # if not data_from_unity: 
+            #     print('유니티 연결 종료 ' + addr[0],':',addr[1])
+            #     break
             
             #유니티에서 파이썬으로 전달하는 데이터받아서 집어넣기
-            if data_from_unity.decode() == 'ChangeHanddetectionMode':
-                unity_to_python_queue.put(data_from_unity)
-            elif data_from_unity.decode() == 'ChangListenMode':
-                unity_to_python_queue.put(data_from_unity)
+            # if data_from_unity.decode() == 'ChangeHanddetectionMode':
+            #     unity_to_python_queue.put(data_from_unity)
+            # elif data_from_unity.decode() == 'ChangListenMode':
+            #     unity_to_python_queue.put(data_from_unity)
 
             data_from_queue = python_to_unity_queue.get() #큐의 맨앞에서 encode()형의 데이터를 가져온다.
             if data_from_queue: #데이터 값이 존재한다면
