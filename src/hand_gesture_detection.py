@@ -2,12 +2,14 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import time
-
 import pyttsx3
 from unicode import join_jamos
 
 # 탐지할 손 개수 1개!
-max_num_hands = 1 
+MAX_NUM_HANDS = 1
+
+#waiting_time프레임만큼 
+waiting_time = 120
 
 # 사용할 제스쳐 따로만들기!
 GESTURE = {0:'zero', 1:'one', 2:'two', 3:'three', 4:'four', 5:'five',
@@ -20,15 +22,13 @@ HANGEUL = {0:'ㄱ', 1:'ㄴ', 2:'ㄷ', 3:'ㄹ', 4:'ㅁ', 5:'ㅂ',
     14:'ㅏ',15:'ㅑ',16:'ㅓ',17:'ㅕ',18:'ㅗ',19:'ㅛ',20:'ㅜ',21:'ㅠ',22:'ㅡ',23:'ㅣ',
     24:'ㅐ',25:'ㅔ',26:'ㅚ',27:'ㅟ',28:'ㅒ',29:'예',30:'ㅢ'}
 
-
-# MediaPipe hands model 손가져오기!
+# MediaPipe hands model 파라미터 설정(손가져오기!)
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
 hands = mp_hands.Hands(
-    max_num_hands=max_num_hands,
-    min_detection_confidence=0.5, #캡스톤2의 학습방향할때 0.5로하고, 캡스톤1 학습방향은 0.9로 하였다. 0.5가 더민감한듯
+    max_num_hands=MAX_NUM_HANDS,
+    min_detection_confidence=0.5,
     min_tracking_confidence=0.5)
-
 
 # Gesture recognition model
 file = np.genfromtxt('data/hand_gesture_train.csv', delimiter=',')
@@ -41,23 +41,24 @@ stack=[]
 #웹캠에서 이미지 읽어오기
 cap = cv2.VideoCapture(0)
 
+
+
 count = 0#모션 체인지의 카운터 변수
 count2 = [] # 음성변환으로의 카운터 변수
 text_list = [] #입력받은 텍스트를 받아들일 변수
 while cap.isOpened():
 
-    if len(count2)==120: #50번돌 동안 손가락이 읽히지 않았다면
-        if len(text_list)!=0:    
-            print("지화에 따라 추가된 모음자음 리스트: ",text_list)
-            text_list = "".join(text_list)                               # 리스트를 문자열로
-            print("문자열로 변경된 모음/자음",text_list)
-            merge_jamo = join_jamos(text_list)   #단애인 지화 후 그 모/자음을 합체
-            print("모음자음에서 합쳐진 단어로 => ",merge_jamo)
+    if len(text_list)!=0 and len(count2)==waiting_time: #waiting_time프레임동안 손가락이 추가로 읽히지 않았다면 그동안 모인 텍스트를 음성으로 출력
+        print("지화에 따라 추가된 모음자음 리스트: ",text_list)
+        text_list = "".join(text_list)                               # 리스트를 문자열로
+        print("문자열로 변경된 모음/자음",text_list)
+        merge_jamo = join_jamos(text_list)   #단애인 지화 후 그 모/자음을 합체
+        print("모음자음에서 합쳐진 단어로 => ",merge_jamo)
 
-            s = pyttsx3.init()    #여기서부터는 tts기술로 텍스트를 스피커에서 출력
-            s.say(merge_jamo)
-            s.runAndWait()
-            text_list = []
+        s = pyttsx3.init()    #여기서부터는 tts기술로 텍스트를 스피커에서 출력
+        s.say(merge_jamo)
+        s.runAndWait()
+        text_list = []
 
 
 
