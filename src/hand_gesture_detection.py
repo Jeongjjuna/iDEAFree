@@ -5,6 +5,18 @@ import time
 import pyttsx3
 from unicode import join_jamos
 
+def execute_tts(text_list):
+    print("지화에 따라 추가된 모음자음 리스트: ",text_list)
+    text_list = "".join(text_list)                               # 리스트를 문자열로
+    print("문자열로 변경된 모음/자음",text_list)
+    merge_jamo = join_jamos(text_list)   #단애인 지화 후 그 모/자음을 합체
+    print("모음자음에서 합쳐진 단어로 => ",merge_jamo)
+    
+    s = pyttsx3.init()    #여기서부터는 tts기술로 텍스트를 스피커에서 출력
+    s.say(merge_jamo)
+    s.runAndWait()
+
+
 # 탐지할 손 개수 1개!
 MAX_NUM_HANDS = 1
 
@@ -43,25 +55,18 @@ cap = cv2.VideoCapture(0)
 
 
 
+    
+
+
+
 count = 0#모션 체인지의 카운터 변수
 count2 = [] # 음성변환으로의 카운터 변수
 text_list = [] #입력받은 텍스트를 받아들일 변수
 while cap.isOpened():
 
     if len(text_list)!=0 and len(count2)==waiting_time: #waiting_time프레임동안 손가락이 추가로 읽히지 않았다면 그동안 모인 텍스트를 음성으로 출력
-        print("지화에 따라 추가된 모음자음 리스트: ",text_list)
-        text_list = "".join(text_list)                               # 리스트를 문자열로
-        print("문자열로 변경된 모음/자음",text_list)
-        merge_jamo = join_jamos(text_list)   #단애인 지화 후 그 모/자음을 합체
-        print("모음자음에서 합쳐진 단어로 => ",merge_jamo)
-
-        s = pyttsx3.init()    #여기서부터는 tts기술로 텍스트를 스피커에서 출력
-        s.say(merge_jamo)
-        s.runAndWait()
-        text_list = []
-
-
-
+        execute_tts(text_list)
+        text_list = [] #음성으로 출력 후 text_list 초기화
 
     ret, img = cap.read() #한프레임!!씩 이미지를 읽어온다.
     if not ret:
