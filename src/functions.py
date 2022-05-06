@@ -3,6 +3,7 @@ import mediapipe as mp
 import numpy as np
 import time
 import pyttsx3
+from unicode import join_jamos
 
 def execute_tts(text_list):
     print("지화에 따라 추가된 모음자음 리스트: ",text_list)
