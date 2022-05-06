@@ -10,12 +10,12 @@ from unicode import join_jamos
 max_num_hands = 1 
 
 # 사용할 제스쳐 따로만들기!
-gesture = {0:'zero', 1:'one', 2:'two', 3:'three', 4:'four', 5:'five',
+GESTURE = {0:'zero', 1:'one', 2:'two', 3:'three', 4:'four', 5:'five',
     6:'six', 7:'seven', 8:'eight', 9:'nine', 10:'ten', 11:'eleven',12:'twelve',13:'thirteen',
     14:'14',15:'15',16:'16',17:'17',18:'18',19:'19',20:'20',21:'21',22:'22',23:'23',
     24:'24',25:'25',26:'26',27:'27',28:'28',29:'29',30:'30'}
 
-han = {0:'ㄱ', 1:'ㄴ', 2:'ㄷ', 3:'ㄹ', 4:'ㅁ', 5:'ㅂ',
+HANGEUL = {0:'ㄱ', 1:'ㄴ', 2:'ㄷ', 3:'ㄹ', 4:'ㅁ', 5:'ㅂ',
     6:'ㅅ', 7:'ㅇ', 8:'ㅈ', 9:'ㅊ', 10:'ㅋ', 11:'ㅌ',12:'ㅍ',13:'ㅎ',
     14:'ㅏ',15:'ㅑ',16:'ㅓ',17:'ㅕ',18:'ㅗ',19:'ㅛ',20:'ㅜ',21:'ㅠ',22:'ㅡ',23:'ㅣ',
     24:'ㅐ',25:'ㅔ',26:'ㅚ',27:'ㅟ',28:'ㅒ',29:'예',30:'ㅢ'}
@@ -26,17 +26,15 @@ mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
 hands = mp_hands.Hands(
     max_num_hands=max_num_hands,
-    min_detection_confidence=0.9,
-    min_tracking_confidence=0.9)
+    min_detection_confidence=0.5,
+    min_tracking_confidence=0.5)
 
 
 # Gesture recognition model
-file = np.genfromtxt('data/jihun_data2.csv', delimiter=',')
+file = np.genfromtxt('data/hand_gesture_train.csv', delimiter=',')
 angle = file[:,:-1].astype(np.float32) # x_train  >>> x=각도 15개
 label = file[:, -1].astype(np.float32) # y_train  >>> y=모션 1개
-knn = cv2.ml.KNearest_create()
-print(angle.shape)
-print(label.shape)
+knn = cv2.ml.KNearest_create() 
 knn.train(angle, cv2.ml.ROW_SAMPLE, label) #knn모델학습
 stack=[]
 
@@ -68,7 +66,7 @@ while cap.isOpened():
     if not ret:
         continue
 
-    img = cv2.flip(img, 1)
+    img = cv2.flip(img, 1) #여기 주석처리하면 반전시킬 수 있음
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     result = hands.process(img)
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
@@ -79,6 +77,8 @@ while cap.isOpened():
     if result.multi_hand_landmarks is not None: #만약 손자체가 인식됐다면!
         count2= []
         for res in result.multi_hand_landmarks:
+            
+            #----------------------------------------------랜드마크로부터 데이터 값 추출 및 전처리-----------------------------------------
             joint = np.zeros((21, 3))
             for j, lm in enumerate(res.landmark):
                 joint[j] = [lm.x, lm.y, lm.z]
@@ -93,17 +93,19 @@ while cap.isOpened():
             # Get angle using arcos of dot product>>>>>> 각도구하기 공식! 수학공식임
             angle = np.arccos(np.einsum('nt,nt->n',
                 v[[0,1,2,4,5,6,8,9,10,12,13,14,16,17,18,3,3,3,3],:], 
-                v[[1,2,3,5,6,7,9,10,11,13,14,15,17,18,19,7,11,15,19],:])) # [15,]
+                v[[1,2,3,5,6,7,9,10,11,13,14,15,17,18,19,7,11,15,19],:])) # (19,)
 
             angle = np.degrees(angle) # Convert radian to degree        
 
-            # Inference gesture
-            data = np.array([angle], dtype=np.float32)
+            # 벡터 사이의 각도를 데이터로 가지는 numpy array 생성(분류할 데이터값들)
+            data = np.array([angle], dtype=np.float32)# (19,)
 
+            #19개의 데이터를 각도0~180도에 대하여 정규화 
             for d in range(len(data[0])):
                 data[0][d] = round(data[0][d]/180, 4)
 
             #동서남북 구분코드
+            # #(가령 ㄱ, ㄴ은 각 좌표의 각도는 같지만 서로 다른 분류값이기 때문에 손전체가 가르키는 방향변수를 추가로 학습하여 분류 할 수 있도록 한다.)
             if abs(joint[8][0]-joint[0][0])>abs(joint[8][1]-joint[0][1]):
                 if joint[8][0]<joint[0][0]:
                     k = 0.0
@@ -114,26 +116,31 @@ while cap.isOpened():
                     k = 120.0
                 else:
                     k = 180.0
-            data=np.append(data[0],round(k/180, 4))
+            data=np.append(data[0],round(k/180, 4)) #추가된 방향정보의 변수 데이터값도 0~180사이로 정규화 해준다. 총4가지(0,60,120,180)
             data = np.array([data],dtype=np.float32)
 
+            #knn으로 분류할 data numpy array 완성
+            #-----------------------------------------------------------------------------------------------------------------------------
+
+
+            #-----------------------------------------------------사용안하기로했음 -> 동서남북 구분 변수로 해결
             #앞 뒤 구분코드
             # if joint[2][0]-joint[17][0]>0: #손등이보인다
             #     kk = 0.0
             # else: #손바닥이보인다
             #     kk = 90.0
-
             # data=np.append(data[0],kk)
             # data = np.array([data],dtype=np.float32)
-            
+            #------------------------------------------------------
 
-            ret, results, neighbours, dist = knn.findNearest(data, 12)
-            idx = int(round(results[0][0]*30,1))
+
+            ret, results, neighbours, dist = knn.findNearest(data, 12) #knn머신러닝 모델을 이용하여 data값 분류 -->> 최적의 k값을 찾을 필요 있음
+            idx = int(round(results[0][0]*30,1)) #정규화된 변수를 0~30인덱스로 변환한다(GESTURE, HANGEUL 리스트 변수의 인덱스를 사용하기 위함)
 
             # Draw gesture result
-            if idx in gesture.keys():
+            if idx in GESTURE.keys():
                 std = idx
-                cv2.putText(img, text=gesture[idx].upper()+str(angle), org=(int(res.landmark[0].x * img.shape[1]), int(res.landmark[0].y * img.shape[0] + 20)), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2)
+                cv2.putText(img, text=GESTURE[idx].upper()+str(angle), org=(int(res.landmark[0].x * img.shape[1]), int(res.landmark[0].y * img.shape[0] + 20)), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2)
 
             mp_drawing.draw_landmarks(img, res, mp_hands.HAND_CONNECTIONS)
             
@@ -148,6 +155,7 @@ while cap.isOpened():
             #     count=0
 
 
+
             stack.append(std)
             if count%10==0:
                 k=stack.pop()
@@ -155,13 +163,13 @@ while cap.isOpened():
                     len_text=len(text_list)
                     if len_text==0:
                         print(k,'입력완료') #이때 입력받았다고 사용자에게 알려줘야함 led?? 잠깐 텀이 필요함
-                        text_list.append(han[k])
+                        text_list.append(HANGEUL[k])
                         time.sleep(0.3)
                         stack=[]
                     else:
                         #연속된 모음이 들어오는지 아닌지
-                        for x in han:
-                            if han[x]==text_list[len_text-1]:
+                        for x in HANGEUL:
+                            if HANGEUL[x]==text_list[len_text-1]:
                                 index = x
                                 break
 
@@ -169,7 +177,7 @@ while cap.isOpened():
                             pass
                         else:
                             print(k,'입력완료') #이때 입력받았다고 사용자에게 알려줘야함 led?? 잠깐 텀이 필요함
-                            text_list.append(han[k])
+                            text_list.append(HANGEUL[k])
                             time.sleep(0.3)
                             stack=[]
                 else:
