@@ -26,7 +26,7 @@ mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
 hands = mp_hands.Hands(
     max_num_hands=max_num_hands,
-    min_detection_confidence=0.5,
+    min_detection_confidence=0.5, #캡스톤2의 학습방향할때 0.5로하고, 캡스톤1 학습방향은 0.9로 하였다. 0.5가 더민감한듯
     min_tracking_confidence=0.5)
 
 
