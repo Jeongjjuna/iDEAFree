@@ -161,7 +161,9 @@ def waiting_client(server_socket):
 def run_thread(client_socket, addr, what_client):
     #받은 메세지가 'unity' 라면 유니티 쓰레드함수로 이동
     if what_client.decode() == 'unity':
-        start_new_thread(communication_with_unity, (client_socket, addr)) #유니티
+        start_new_thread(communication_with_unity, (client_socket, addr)) #서버 -> 유니티
+        start_new_thread(recv_from_unity, (client_socket, addr)) #유니티 -> 서버
     #받은 메세지가 'unity'가 아니라면 음성인식 쓰레드함수로 이동
     else:
-        start_new_thread(communication_with_python, (client_socket, addr)) #젯슨
+        start_new_thread(communication_with_python, (client_socket, addr)) #젯슨 -> 서버
+        start_new_thread(send_to_jetson, (client_socket, addr)) #서버 -> 젯슨
