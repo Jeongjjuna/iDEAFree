@@ -3,6 +3,8 @@ import time
 
 import speech_recognition as sr
 from jamo import h2j,j2hcj
+from _thread import *
+import queue
 #from hanspell import spell_checker
 
 
@@ -63,6 +65,35 @@ def get_audio():           #마이크로 부터 음성 받아드리는 함수
             print("Exception: " + str(e))
     return said
 
+button = queue.Queue()
+std = 0
+# 유니티(서버) 로부터 버튼정보를 받는 쓰레드
+def buttonData_from_unity(client_socket, k):
+    global button, std
+    # 서버ip : 클라이언트 포트
+    print('젯슨유니티 통신단 접속성공!')
+
+    while True:
+        try:
+            data = client_socket.recv(1024)
+            if not data:
+                print('서버가 꺼진거겠죠?')
+                break
+            if std%2 == 0:
+                print("음성차단모드")
+            else:
+                print("음성대기모드전환")
+            std += 1
+            
+        except ConnectionResetError as e:
+            break
+
+    print('서버가 꺼진거겠죠?')
+    client_socket.close() #서버와의 젯슨유니티 통신단 연결 종료
+
+
+
+
 # 로컬은 127.0.0.1의 ip로 접속한다.
 #HOST = '168.131.153.213'
 HOST = '127.0.0.1'
@@ -73,16 +104,18 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # connect함수로 접속을 한다.
 client_socket.connect((HOST, PORT))
 me = 'jetson' 
-client_socket.send(me.encode()) 
+client_socket.send(me.encode())
 
+time.sleep(0.5)
+start_new_thread(buttonData_from_unity, (client_socket, 0))
 
 td_list=['저기요','실례합니다','주완아','지훈아','야']
 
 
-std = "0"
+
+#std = "0"
 # 10번의 루프로 send receive를 한다.
-while True:
-    
+while True:    
     # data2 = serialport.readline()                                                                                                                                                                                                              
     # data2=data2.strip()
     # print(std,data2.decode())
@@ -95,24 +128,32 @@ while True:
 
         
     #if std == "1":
-    print('음성을입력하세요')
     
-    text= get_audio()
-    print(text)
-    # if text in td_list:
-    #     serialport.write("v".encode())    
+    
+    if std%2 == 0: #이때만 음성 입력받기
+        print('음성을입력하세요')
+        text= get_audio() #아마 여기가 무한대기(시간제한걸어서 해결해야될듯)
+        print(text)
+        # if text in td_list:
+        #     serialport.write("v".encode())    
 
-    jamo_str = j2hcj(h2j(text))
-    jamo_str = list(jamo_str)
-    jamo_str.append(' ')
-    jamo_str = dist_chosung_jongsung(jamo_str)
-    print(jamo_str)
-    for msg in jamo_str:
-        data = msg.encode()
-        length = len(data)
-        client_socket.sendall(length.to_bytes(4, byteorder="big"))
-        client_socket.sendall(data)
-        time.sleep(0.5)
+        jamo_str = j2hcj(h2j(text))
+        jamo_str = list(jamo_str)
+        jamo_str.append(' ')
+        jamo_str = dist_chosung_jongsung(jamo_str)
+        print(jamo_str)
+        for msg in jamo_str:
+            if std % 2 != 0 and msg ==' ':
+                client_socket.send(msg.encode())
+                time.sleep(0.5)
+                client_socket.send("*".encode())
+                break
+
+            data = msg.encode()
+            length = len(data)
+            client_socket.sendall(length.to_bytes(4, byteorder="big"))
+            client_socket.sendall(data)
+            time.sleep(0.5)
         
     
     time.sleep(2)
