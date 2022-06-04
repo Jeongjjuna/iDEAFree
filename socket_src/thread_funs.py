@@ -84,6 +84,33 @@ def communication_with_unity(client_socket, addr):
     client_socket.close() #클라이언트 연결 종료
 
 
+# 유니티 -> 서버 수신대기
+def recv_from_unity(client_socket, addr):
+    # 서버ip : 클라이언트 포트
+    print('서버 유니티 버튼 통신단!(', addr[0], ':', addr[1],')') 
+
+    while True:
+        try:
+            data = client_socket.recv(1024) #유니티 버튼으로 부터 오는 신호 대기
+            print(data.decode().strip())
+            if not data:
+                #print('유니티 수신단 연결 종료' + addr[0],':',addr[1])
+                break
+            
+            if data.decode() == 'jihwa':
+                unity_to_python_queue.put(data)
+            elif data.decode() == 'listen':
+                unity_to_python_queue.put(data)
+            
+            
+        except ConnectionResetError as e:
+            #print('Disconnected by 유니티통신단 예외처리')
+            break
+
+    print('유니티 통신단 연결종료' + addr[0],':',addr[1])
+    client_socket.close()
+        
+
 def set_server():
     #서버 ip,포트
     #HOST = socket.gethostbyname(socket.gethostname()) #서버 자신의 고정 ip 받아오기
