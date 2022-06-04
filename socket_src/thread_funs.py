@@ -109,7 +109,33 @@ def recv_from_unity(client_socket, addr):
 
     print('유니티 통신단 연결종료' + addr[0],':',addr[1])
     client_socket.close()
+
         
+# 서버 -> 젯슨 데이터 전송
+def send_to_jetson(client_socket, addr): 
+    global unity_to_python_queue
+    # 서버ip : 클라이언트 포트
+    print('서버에서 젯슨으로 통신단!(', addr[0], ':', addr[1],')') 
+
+    while True:
+        try:
+            data = unity_to_python_queue.get()
+            if data: #데이터 값이 존재한다면
+                if data == b'\x00\x00\x00\x03': #서버에서의 전송받을 시 공백구분데이터 > 이때는 패스
+                    continue
+                else:
+                    print('발신',data.decode(),end='')
+                    print(' >>> 젯슨으로 전송 성공')
+                    client_socket.send(data) #실제 젯슨으로 데이터 전송
+                    time.sleep(0.25)
+            
+        except ConnectionResetError as e:
+            print('Disconnected by 젯슨 예외처리')
+            break
+    
+    print("젯슨 클라이언트 접속 종료")
+    client_socket.close() #클라이언트 연결 종료
+
 
 def set_server():
     #서버 ip,포트
