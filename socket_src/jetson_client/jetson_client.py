@@ -66,7 +66,7 @@ def get_audio():           #마이크로 부터 음성 받아드리는 함수
     return said
 
 button = queue.Queue()
-std = 0
+std = 2
 # 유니티(서버) 로부터 버튼정보를 받는 쓰레드
 def buttonData_from_unity(client_socket, k):
     global button, std
@@ -79,11 +79,21 @@ def buttonData_from_unity(client_socket, k):
             if not data:
                 print('서버가 꺼진거겠죠?')
                 break
-            if std%2 == 0:
+
+            if data.decode() == 'jihwa':
                 print("음성차단모드")
-            else:
+                std = 1
+            elif data.decode() == 'listen':
                 print("음성대기모드전환")
-            std += 1
+                std = 0
+            else:
+                pass
+
+            # if std%2 == 0:
+            #     print("음성차단모드")
+            # else:
+            #     print("음성대기모드전환")
+            # std += 1
             
         except ConnectionResetError as e:
             break
@@ -113,24 +123,9 @@ td_list=['저기요','실례합니다','주완아','지훈아','야']
 
 
 
-#std = "0"
-# 10번의 루프로 send receive를 한다.
-while True:    
-    # data2 = serialport.readline()                                                                                                                                                                                                              
-    # data2=data2.strip()
-    # print(std,data2.decode())
-    # if std == "1" and data2.decode() == "1":
-    #     std = "0"
-    
-    # elif std == "0" and data2.decode() == "1":
-    #     std = "1"
-        
 
-        
-    #if std == "1":
-    
-    
-    if std%2 == 0: #이때만 음성 입력받기
+while True:    
+    if std == 0: #이때만 음성 입력받기
         print('음성을입력하세요')
         text= get_audio() #아마 여기가 무한대기(시간제한걸어서 해결해야될듯)
         print(text)
@@ -143,7 +138,7 @@ while True:
         jamo_str = dist_chosung_jongsung(jamo_str)
         print(jamo_str)
         for msg in jamo_str:
-            if std % 2 != 0 and msg ==' ':
+            if std == 1 and msg ==' ':
                 client_socket.send(msg.encode())
                 time.sleep(0.5)
                 client_socket.send("*".encode())
