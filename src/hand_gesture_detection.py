@@ -7,24 +7,6 @@ import pyttsx3
 from unicode import join_jamos
 from functions import execute_tts
 
-def execute_tts(text_list):
-    print("지화에 따라 추가된 모음자음 리스트: ",text_list)
-    text_list = "".join(text_list)                               # 리스트를 문자열로
-    print("문자열로 변경된 모음/자음",text_list)
-    merge_jamo = join_jamos(text_list)   #단애인 지화 후 그 모/자음을 합체
-    print("모음자음에서 합쳐진 단어로 => ",merge_jamo)
-    
-    s = pyttsx3.init()    #여기서부터는 tts기술로 텍스트를 스피커에서 출력
-    s.say(merge_jamo)
-    s.runAndWait()
-
-
-# 탐지할 손 개수 1개!
-MAX_NUM_HANDS = 1
-
-#waiting_time프레임만큼 
-waiting_time = 120
-
 # 사용할 제스쳐 따로만들기!
 GESTURE = {0:'zero', 1:'one', 2:'two', 3:'three', 4:'four', 5:'five',
     6:'six', 7:'seven', 8:'eight', 9:'nine', 10:'ten', 11:'eleven',12:'twelve',13:'thirteen',
@@ -36,6 +18,13 @@ HANGEUL = {0:'ㄱ', 1:'ㄴ', 2:'ㄷ', 3:'ㄹ', 4:'ㅁ', 5:'ㅂ',
     14:'ㅏ',15:'ㅑ',16:'ㅓ',17:'ㅕ',18:'ㅗ',19:'ㅛ',20:'ㅜ',21:'ㅠ',22:'ㅡ',23:'ㅣ',
     24:'ㅐ',25:'ㅔ',26:'ㅚ',27:'ㅟ',28:'ㅒ',29:'예',30:'ㅢ'}
 
+MAX_NUM_HANDS = 1 # 탐지할 손 개수 1개!
+waiting_time = 120 # waiting_time프레임만큼 동작이 들어오는지 판단하는 변수
+text_list = [] #입력받은 텍스트를 받아들일 변수
+count = 0 #모션 체인지의 카운터 변수
+count2 = [] # 음성변환으로의 카운터 변수
+stack=[]
+
 # MediaPipe hands model 파라미터 설정(손가져오기!)
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
@@ -45,27 +34,17 @@ hands = mp_hands.Hands(
     min_tracking_confidence=0.5)
 
 # Gesture recognition model
-file = np.genfromtxt('data/hand_gesture_train.csv', delimiter=',')
-angle = file[:,:-1].astype(np.float32) # x_train  >>> x=각도 15개
+file = np.genfromtxt('data/lastdata.csv', delimiter=',')
+angle = file[:,:-1].astype(np.float32) # x_train  >>> x=각도 20개
 label = file[:, -1].astype(np.float32) # y_train  >>> y=모션 1개
-knn = cv2.ml.KNearest_create() 
+knn = cv2.ml.KNearest_create()  #knn모델생성
 knn.train(angle, cv2.ml.ROW_SAMPLE, label) #knn모델학습
-stack=[]
+
 
 #웹캠에서 이미지 읽어오기
 cap = cv2.VideoCapture(0)
 
-
-
-    
-
-
-
-count = 0#모션 체인지의 카운터 변수
-count2 = [] # 음성변환으로의 카운터 변수
-text_list = [] #입력받은 텍스트를 받아들일 변수
 while cap.isOpened():
-
     if len(text_list)!=0 and len(count2)==waiting_time: #waiting_time프레임동안 손가락이 추가로 읽히지 않았다면 그동안 모인 텍스트를 음성으로 출력
         execute_tts(text_list)
         text_list = [] #음성으로 출력 후 text_list 초기화
@@ -73,15 +52,14 @@ while cap.isOpened():
     ret, img = cap.read() #한프레임!!씩 이미지를 읽어온다.
     if not ret:
         continue
-
-    img = cv2.flip(img, 1) #여기 주석처리하면 반전시킬 수 있음
+    
+    #이미지 칼라(흑백) 및 반전 설정가능
+    #img = cv2.flip(img, 1) 여기 주석처리하면 반전시킬 수 있음
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     result = hands.process(img)
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
-
-    #각도계산 하기!! 제일 중요 분석해서 실시간으로 모션 각도 추출해서 데이터셋 만들어야함!!!
-
+    #각도계산 하기!! 제일 중요!! 분석해서 실시간으로 모션 각도 추출해서 데이터셋 만들어야함!!!
     if result.multi_hand_landmarks is not None: #만약 손자체가 인식됐다면!
         count2= []
         for res in result.multi_hand_landmarks:
@@ -98,7 +76,7 @@ while cap.isOpened():
             # Normalize v
             v = v / np.linalg.norm(v, axis=1)[:, np.newaxis] #벡터/벡터길이 >>Normalize  크기가 1인 벡터 만들기 (길이공식나중에확인하기~)
 
-            # Get angle using arcos of dot product>>>>>> 각도구하기 공식! 수학공식임
+            # Get angle using arcos of dot product>>>>>> 각도구하기 공식! 수학공식임(논문참조)
             angle = np.arccos(np.einsum('nt,nt->n',
                 v[[0,1,2,4,5,6,8,9,10,12,13,14,16,17,18,3,3,3,3],:], 
                 v[[1,2,3,5,6,7,9,10,11,13,14,15,17,18,19,7,11,15,19],:])) # (19,)
@@ -141,18 +119,20 @@ while cap.isOpened():
             # data = np.array([data],dtype=np.float32)
             #------------------------------------------------------
 
+            #print(data)
 
-            ret, results, neighbours, dist = knn.findNearest(data, 12) #knn머신러닝 모델을 이용하여 data값 분류 -->> 최적의 k값을 찾을 필요 있음
+            #------------------------------------------------------
+            ret, results, neighbours, dist = knn.findNearest(data, 9) #knn머신러닝 모델을 이용하여 data값 분류 -->> 최적의 k값을 찾을 필요 있음
             idx = int(round(results[0][0]*30,1)) #정규화된 변수를 0~30인덱스로 변환한다(GESTURE, HANGEUL 리스트 변수의 인덱스를 사용하기 위함)
 
-            # Draw gesture result
+            # Draw gesture result(개발영역에서 디버깅 및 확인 할 용도)
             if idx in GESTURE.keys():
-                std = idx
-                cv2.putText(img, text=GESTURE[idx].upper()+str(angle), org=(int(res.landmark[0].x * img.shape[1]), int(res.landmark[0].y * img.shape[0] + 20)), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2)
-
+                cv2.putText(img, text=str(idx), org=(int(res.landmark[0].x * img.shape[1]), int(res.landmark[0].y * img.shape[0] + 20)), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2)
+                #text=GESTURE[idx] 에서 HANGEUL 딕셔너리를 사용하면 더 보기좋을듯(OpenCv 한글 출력할 수 있는 솔루션 필요!)
             mp_drawing.draw_landmarks(img, res, mp_hands.HAND_CONNECTIONS)
             
-            
+
+            #-----------실시간 손이 가지는 데이타값을 출력해보기위해 작성---------
             #데이터출력을 위한 20프레임간격출력
             # if count%20==0:
             #     for i in range(16):
@@ -161,10 +141,9 @@ while cap.isOpened():
             #         else:
             #             print(data[0][i],end=",")
             #     count=0
+            #--------------------------------------------------------------------
 
-
-
-            stack.append(std)
+            stack.append(idx)
             if count%10==0:
                 k=stack.pop()
                 if stack.count(k)>=18:
