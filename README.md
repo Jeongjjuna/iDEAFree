@@ -19,7 +19,7 @@
 
 ### 💻 개발에 사용한 기술
 
-* python - Mediapipe, OpenCv(knn모델)
+* python:ver 3.8.10 - Mediapipe, OpenCv(knn모델)
 * socket프로그래밍
 * 멀티쓰레딩
 * unity3d(c#)
